@@ -2328,7 +2328,7 @@ def build_cp_period_ranges_from_previous_period_range_file(
     except OSError:
         return [], []
 
-    objAllRanges: List[Tuple[Tuple[int, int], Tuple[int, int]]] = []
+    objPriorRanges: List[Tuple[Tuple[int, int], Tuple[int, int]]] = []
     objCurrentRanges: List[Tuple[Tuple[int, int], Tuple[int, int]]] = []
 
     def parse_range_lines(iIndexStart: int) -> Optional[Tuple[Tuple[int, int], Tuple[int, int]]]:
@@ -2370,17 +2370,22 @@ def build_cp_period_ranges_from_previous_period_range_file(
         if pszLine == "前期":
             objPriorRange = parse_range_lines(iIndex)
             if objPriorRange is not None:
-                append_unique(objAllRanges, objPriorRange)
+                append_unique(objPriorRanges, objPriorRange)
             iIndex += 1
             continue
         if pszLine == "当期":
             objCurrentRange = parse_range_lines(iIndex)
             if objCurrentRange is not None:
-                append_unique(objAllRanges, objCurrentRange)
                 append_unique(objCurrentRanges, objCurrentRange)
             iIndex += 1
             continue
         iIndex += 1
+
+    objAllRanges: List[Tuple[Tuple[int, int], Tuple[int, int]]] = []
+    for objRangeItem in objPriorRanges:
+        append_unique(objAllRanges, objRangeItem)
+    for objRangeItem in objCurrentRanges:
+        append_unique(objAllRanges, objRangeItem)
 
     return objAllRanges, objCurrentRanges
 
@@ -4483,7 +4488,7 @@ def create_pj_summary(
     )
     pszCumulativePlPath: str = build_cumulative_file_path(
         pszDirectory,
-        "損益計算書",
+        "損益計算書_販管費配賦",
         objStart,
         objEnd,
     ).replace(".tsv", "_vertical.tsv")
