@@ -4483,7 +4483,7 @@ def create_pj_summary(
     )
     pszCumulativePlPath: str = build_cumulative_file_path(
         pszDirectory,
-        "損益計算書",
+        "損益計算書_販管費配賦",
         objStart,
         objEnd,
     ).replace(".tsv", "_vertical.tsv")
