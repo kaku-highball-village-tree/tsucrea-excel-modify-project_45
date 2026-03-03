@@ -6758,6 +6758,8 @@ def _apply_step0010_income_statement_borders(
 
             if iColumnIndex < iLastColumn:
                 objRight = objSolidSide
+            else:
+                objRight = objThickSide
 
             if iRowIndex == 1:
                 objBottom = objThickSide
