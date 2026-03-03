@@ -637,21 +637,67 @@ def handle_pj_income_statement_left_down() -> None:
             "SellGeneralAdminCost_Allocation_DnD",
         )
         return
-    objCandidates = [
-        pszName
-        for pszName in os.listdir(pszTargetDirectory)
-        if pszName.startswith("販管費配賦後_損益計算書_") and pszName.endswith(".xlsx")
+
+    def parse_selected_range_file(
+        pszPath: str,
+    ) -> Optional[Tuple[Tuple[int, int], Tuple[int, int]]]:
+        try:
+            with open(pszPath, "r", encoding="utf-8", newline="") as objFile:
+                pszContent: str = objFile.read()
+        except OSError:
+            return None
+
+        objMatch = re.search(r"開始:\s*(\d{4})/(\d{2}).*?終了:\s*(\d{4})/(\d{2})", pszContent, re.DOTALL)
+        if objMatch is None:
+            objMatch = re.search(r"採用範囲:\s*(\d{4})年(\d{1,2})月〜(\d{4})年(\d{1,2})月", pszContent)
+            if objMatch is None:
+                return None
+
+        iStartYear: int = int(objMatch.group(1))
+        iStartMonth: int = int(objMatch.group(2))
+        iEndYear: int = int(objMatch.group(3))
+        iEndMonth: int = int(objMatch.group(4))
+        if not (1 <= iStartMonth <= 12 and 1 <= iEndMonth <= 12):
+            return None
+        return (iStartYear, iStartMonth), (iEndYear, iEndMonth)
+
+    pszPeriodDirectory = os.path.join(pszExecutionRoot, "期間")
+    objRangeFileNames: List[str] = [
+        "SellGeneralAdminCost_Allocation_Cmd_SelectedRange.txt",
+        "SellGeneralAdminCost_Allocation_DnD_SelectedRange.txt",
     ]
-    if not objCandidates:
+
+    pszTargetPath: Optional[str] = None
+    for pszRangeFileName in objRangeFileNames:
+        pszRangePath: str = os.path.join(pszPeriodDirectory, pszRangeFileName)
+        if not os.path.isfile(pszRangePath):
+            continue
+        objSelectedRange = parse_selected_range_file(pszRangePath)
+        if objSelectedRange is None:
+            continue
+        _, (iEndYear, iEndMonth) = objSelectedRange
+        pszEndLabel: str = f"{iEndYear}年{iEndMonth:02d}月"
+        pszTargetPath = os.path.join(
+            pszTargetDirectory,
+            f"販管費配賦後_損益計算書_{pszEndLabel}_A∪B_プロジェクト名_C∪D_両方.xlsx",
+        )
+        break
+
+    if pszTargetPath is None:
         show_error_message_box(
-            "Error: ファイルが見つかりません。\n" + pszTargetDirectory,
+            "Error: 対象期間を取得できませんでした。",
             "SellGeneralAdminCost_Allocation_DnD",
         )
         return
-    pszSelectedFile = choose_pj_income_statement_file(pszTargetDirectory)
-    if pszSelectedFile is None:
+
+    if not os.path.isfile(pszTargetPath):
+        show_error_message_box(
+            "Error: ファイルが見つかりません。\n" + pszTargetPath,
+            "SellGeneralAdminCost_Allocation_DnD",
+        )
         return
-    os.startfile(os.path.join(pszTargetDirectory, pszSelectedFile))
+
+    os.startfile(pszTargetPath)
 
 
 def handle_pj_income_statement_right_down() -> None:
